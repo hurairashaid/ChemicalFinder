@@ -4,10 +4,7 @@ import React from 'react';
 const Topbar = () => {
   return (
     <View style={{}}>
-      <Text
-        style={{color: 'white', fontSize:17}}>
-        Davids Gates
-      </Text>
+      
     </View>
   );
 };

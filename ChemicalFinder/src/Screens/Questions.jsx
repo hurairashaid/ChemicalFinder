@@ -5,14 +5,73 @@ import {
   TextInput,
   Button,
   ScrollView,
+  Modal,
 } from 'react-native';
-import React from 'react';
-import {Formik} from 'formik';
+import React, {useEffect, useState} from 'react';
+import {Field, Formik} from 'formik';
+import {Picker} from '@react-native-picker/picker';
+import axios from 'axios';
+import {BASE_URL} from '../API/API';
+import Loading from '../components/Loading';
 
-const Questions = ({navigation}) => {
+
+
+const Questions = ({navigation, route}) => {
+  const [suger, setsuger] = useState(true);
+  const [bloodPressure, setbloodPressure] = useState(true);
+  const [overWeight, setOverWeight] = useState(true);
+  const [lactose, setlactose] = useState(true);
+  const [loading, setLoading] = useState(false);
+
   function switchScreen(location) {
     navigation.navigate(location);
   }
+
+  const SavedQuestion = async () => {
+    setLoading(true);
+    const token = route.params.token;
+
+    if (!token) return;
+    console.log(token);
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/handleAddQuestion`, // URL
+        {
+          sugar: suger,
+          bloodPressure: bloodPressure,
+          overWeight: overWeight,
+          lactoseIntolerant: lactose,
+        }, // Body (empty object for this request)
+        {
+          // Configuration object for headers
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      if (response.status == 200) {
+        switchScreen('InformationSaved');
+        setLoading(false);
+      } else {
+        console.log(response);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    // Listener for preventing back navigation on this screen
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
+      // Prevent the back navigation (either swipe or hardware button press)
+      e.preventDefault();
+    });
+
+    return unsubscribe; // Cleanup listener on unmount
+  }, [navigation]);
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.headerText}>Fill The Health Form</Text>
@@ -27,156 +86,113 @@ const Questions = ({navigation}) => {
         }}
         onSubmit={values => {
           // Handle form submission (e.g., call CreateAccount)
-          navigation.navigate('InformationSaved');
-
-          console.log(values);
+          SavedQuestion();
         }}>
         {({handleChange, handleBlur, handleSubmit, values}) => (
           <View style={styles.formContainer}>
             <View style={styles.inputContainer}>
               <View style={styles.textheaderContainer}>
-                <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
-                </Text>
+                <Text style={styles.textQuestion}>Do you have Diabetes?</Text>
               </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('email')}
-                  onBlur={handleBlur('email')}
-                  value={values.email}
-                  keyboardType="email-address"
-                  style={styles.input}
-                />
-              </View>
+              <Field name="booleanValue">
+                {({field}) => (
+                  <Picker
+                    selectedValue={suger}
+                    onValueChange={itemValue => setsuger(itemValue)}
+                    style={styles.picker}>
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="True"
+                      value="true"
+                    />
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="False"
+                      value="false"
+                    />
+                  </Picker>
+                )}
+              </Field>
             </View>
             <View style={styles.inputContainer}>
               <View style={styles.textheaderContainer}>
                 <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
+                  Do you have high Blood Pressure?
                 </Text>
               </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
+              <Field style={styles.picker} name="booleanValue">
+                {({field}) => (
+                  <Picker
+                    selectedValue={bloodPressure}
+                    onValueChange={itemValue => setbloodPressure(itemValue)}
+                    style={styles.picker}>
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="True"
+                      value="true"
+                    />
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="False"
+                      value="false"
+                    />
+                  </Picker>
+                )}
+              </Field>
             </View>
             <View style={styles.inputContainer}>
               <View style={styles.textheaderContainer}>
                 <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
+                  Do you consider yourself Over Weight?
                 </Text>
               </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
+              <Field style={styles.picker} name="booleanValue">
+                {({field}) => (
+                  <Picker
+                    selectedValue={overWeight}
+                    onValueChange={itemValue => setOverWeight(itemValue)}
+                    style={styles.picker}>
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="True"
+                      value="true"
+                    />
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="False"
+                      value="false"
+                    />
+                  </Picker>
+                )}
+              </Field>
             </View>
             <View style={styles.inputContainer}>
               <View style={styles.textheaderContainer}>
                 <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
+                  Are you Lactose Intolerant?
                 </Text>
               </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
+              <Field style={styles.picker} name="booleanValue">
+                {({field}) => (
+                  <Picker
+                    selectedValue={lactose}
+                    onValueChange={itemValue => setlactose(itemValue)}
+                    style={styles.picker}>
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="True"
+                      value="true"
+                    />
+                    <Picker.Item
+                      style={{fontSize: 14}}
+                      label="False"
+                      value="false"
+                    />
+                  </Picker>
+                )}
+              </Field>
             </View>
-            <View style={styles.inputContainer}>
-              <View style={styles.textheaderContainer}>
-                <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
-                </Text>
-              </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
-            </View>
-            <View style={styles.inputContainer}>
-              <View style={styles.textheaderContainer}>
-                <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
-                </Text>
-              </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
-            </View>
-            <View style={styles.inputContainer}>
-              <View style={styles.textheaderContainer}>
-                <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
-                </Text>
-              </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
-            </View>
-            <View style={styles.inputContainer}>
-              <View style={styles.textheaderContainer}>
-                <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
-                </Text>
-              </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
-            </View>
-            <View style={styles.inputContainer}>
-              <View style={styles.textheaderContainer}>
-                <Text style={styles.textQuestion}>
-                  Do you have any food allergies? if yes please specify.
-                </Text>
-              </View>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
-            </View>
+
             <Button
               style={styles.submitButton}
               color="#6F70FF"
@@ -186,7 +202,13 @@ const Questions = ({navigation}) => {
           </View>
         )}
       </Formik>
+      <Modal transparent={true} visible={loading} animationType="fade">
+        <View style={styles.overlay}>
+          <Loading />
+        </View>
+      </Modal>
     </ScrollView>
+
   );
 };
 
@@ -235,5 +257,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderRadius: 2,
     paddingVertical: 30,
+  },
+  picker: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    fontSize: 10,
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark overlay
+  },
+  popup: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
   },
 });

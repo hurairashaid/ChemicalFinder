@@ -1,11 +1,19 @@
 import {StyleSheet, Text, View, Image, TouchableOpacity} from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import check from '../assets/check.png';
-
 const InformationSaved = ({navigation}) => {
   function switchScreen(location) {
     navigation.navigate(location);
   }
+  useEffect(() => {
+    // Listener for preventing back navigation on this screen
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
+      // Prevent the back navigation (either swipe or hardware button press)
+      e.preventDefault();
+    });
+
+    return unsubscribe; // Cleanup listener on unmount
+  }, [navigation]);
   return (
     <View
       style={{

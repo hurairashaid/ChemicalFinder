@@ -6,17 +6,113 @@ import {
   TextInput,
   Button,
   TouchableOpacity,
+  Modal,
   Image,
 } from 'react-native';
-import React from 'react';
+import React, {useState} from 'react';
 import {Formik} from 'formik';
 import Facebook from '../assets/facebook.png';
 import Google from '../assets/google.png';
+import AlertBox from '../components/AlertBox';
+import axios from 'axios';
+import {BASE_URL} from '../API/API';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import Loading from '../components/Loading';
+GoogleSignin.configure({
+  offlineAccess: true,
+
+  webClientId:
+    '662664462722-n1tf80ft0tbe9iet6td91o4h659v6sfe.apps.googleusercontent.com',
+});
+
+const GoogleLogin = async () => {
+  await GoogleSignin.hasPlayServices();
+  const userInfo = await GoogleSignin.signIn();
+  return userInfo;
+};
 
 const Login = ({navigation}) => {
+  const [showAlert, setShowAlert] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const toggleShowAlert = alertstate => {
+    setShowAlert(alertstate);
+  };
   function switchScreen(location) {
     navigation.navigate(location);
   }
+
+  // Somewhere in your code
+  const handleGoogleLogin = async () => {
+    console.log('Starting Google login process...');
+    try {
+      const response = await GoogleLogin();
+      console.log('Google Login response:', response);
+
+      const {idToken, user} = response;
+      console.log('User info:', user);
+      console.log('ID Token:', idToken);
+
+      // Uncomment and replace with your logic for further processing
+      // if (idToken) {
+      //   console.log('Validating token...');
+      //   const resp = await authAPI.validateToken({
+      //     token: idToken,
+      //     email: user.email,
+      //   });
+      //   console.log('Token validated, server response:', resp);
+      //   await handlePostLoginData(resp.data);
+      // }
+    } catch (apiError) {
+      console.error('Error during Google Login:', apiError);
+
+      // Detailed error logging
+      if (apiError.response) {
+        console.error('API error response:', apiError.response);
+        console.error('API error data:', apiError.response.data);
+        console.error('API error status:', apiError.response.status);
+        setError(apiError.response.data.error?.message || 'API error occurred');
+      } else if (apiError.request) {
+        console.error('No response received from API:', apiError.request);
+        setError('No response received. Please check your network.');
+      } else {
+        console.error('Error setting up request:', apiError.message);
+        setError(apiError.message || 'Something went wrong during login.');
+      }
+    } finally {
+      console.log('Google login process completed.');
+    }
+  };
+
+  const signin = async data => {
+    console.log(data);
+    console.log(BASE_URL);
+    setLoading(true)
+
+    try {
+      const dataResponse = await axios.post(`${BASE_URL}/login`, {
+        email: data.email,
+        password: data.password,
+      });
+      console.log(dataResponse);
+      if (dataResponse.data !== null) {
+        await AsyncStorage.setItem('token', dataResponse.data.token);
+        switchScreen('MakingReady');
+        setLoading(false)
+      } else {
+        console.log('a');
+        setLoading(false)
+      }
+    } catch (error) {
+      setError(error.response.data.msg); // Set error to true if an exception occurs
+      setShowAlert(true);
+      setLoading(false)
+    }
+  };
   return (
     <ScrollView style={{marginHorizontal: 20}}>
       <Text
@@ -44,7 +140,8 @@ const Login = ({navigation}) => {
           password: '',
         }}
         onSubmit={values => {
-          navigation.navigate('Scan');
+          setError(false); // Reset error before submitting
+          signin(values);
         }}>
         {({handleChange, handleBlur, handleSubmit, values}) => (
           <View
@@ -96,7 +193,8 @@ const Login = ({navigation}) => {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}>
+              }}
+              onPress={handleGoogleLogin}>
               <Image source={Google} style={{width: 20, height: 20}}></Image>
               <Text
                 style={{
@@ -132,6 +230,25 @@ const Login = ({navigation}) => {
           </View>
         )}
       </Formik>
+      <Modal
+        transparent={true}
+        visible={showAlert}
+        animationType="fade"
+        onRequestClose={() => setIsPopupVisible(false)}>
+        <View style={styles.overlay}>
+          <AlertBox
+            title="OOPS! SIGN IN FAILED"
+            description={error}
+            callFunction={toggleShowAlert}
+            style={styles.popup}
+          />
+        </View>
+      </Modal>
+      <Modal transparent={true} visible={loading} animationType="fade">
+        <View style={styles.overlay}>
+          <Loading />
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -149,6 +266,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 5,
     elevation: 4,
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark overlay
+  },
+  popup: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
   },
 });
 

@@ -14,33 +14,34 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  dateOfBirth: {
-    type: Date,
+  questionAnswered: {
+    type: Boolean,
+    default: false,
   },
-  profession: {
-    type: String,
-  },
-  socialMedia: {
-    fb: String,
-    insta: String,
-    linkedIn: String,
-  },
-  profilePic: {
-    type: String,
-    default: null,
-  },
-  level: {
-    type: Number,
-    default: 0,
-  },
-  unburnedLog: {
-    type: Number,
-    default: 0,
-  },
-  burnedLog: {
-    type: Number,
-    default: 0,
-  },
+  questions: [
+    {
+      sugar: {
+        type: Boolean,
+        required: true,
+        default: null,
+      },
+      bloodPressure: {
+        type: Boolean,
+        required: true,
+        default: null,
+      },
+      overWeight: {
+        type: Boolean,
+        required: true,
+        default: null,
+      },
+      lactoseIntolerant: {
+        type: Boolean,
+        required: true,
+        default: null,
+      },
+    },
+  ],
 });
 
 const User = mongoose.model("User", userSchema);
